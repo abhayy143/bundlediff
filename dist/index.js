@@ -1068,14 +1068,14 @@ var require_util = __commonJS({
         }
         const port = url.port != null ? url.port : url.protocol === "https:" ? 443 : 80;
         let origin = url.origin != null ? url.origin : `${url.protocol || ""}//${url.hostname || ""}:${port}`;
-        let path = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
+        let path2 = url.path != null ? url.path : `${url.pathname || ""}${url.search || ""}`;
         if (origin[origin.length - 1] === "/") {
           origin = origin.slice(0, origin.length - 1);
         }
-        if (path && path[0] !== "/") {
-          path = `/${path}`;
+        if (path2 && path2[0] !== "/") {
+          path2 = `/${path2}`;
         }
-        return new URL(`${origin}${path}`);
+        return new URL(`${origin}${path2}`);
       }
       if (!isHttpOrHttpsPrefixed(url.origin || url.protocol)) {
         throw new InvalidArgumentError("Invalid URL protocol: the URL must start with `http:` or `https:`.");
@@ -1526,39 +1526,39 @@ var require_diagnostics = __commonJS({
       });
       diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
         const {
-          request: { method, path, origin }
+          request: { method, path: path2, origin }
         } = evt;
-        debuglog("sending request to %s %s/%s", method, origin, path);
+        debuglog("sending request to %s %s/%s", method, origin, path2);
       });
       diagnosticsChannel.channel("undici:request:headers").subscribe((evt) => {
         const {
-          request: { method, path, origin },
+          request: { method, path: path2, origin },
           response: { statusCode }
         } = evt;
         debuglog(
           "received response to %s %s/%s - HTTP %d",
           method,
           origin,
-          path,
+          path2,
           statusCode
         );
       });
       diagnosticsChannel.channel("undici:request:trailers").subscribe((evt) => {
         const {
-          request: { method, path, origin }
+          request: { method, path: path2, origin }
         } = evt;
-        debuglog("trailers received from %s %s/%s", method, origin, path);
+        debuglog("trailers received from %s %s/%s", method, origin, path2);
       });
       diagnosticsChannel.channel("undici:request:error").subscribe((evt) => {
         const {
-          request: { method, path, origin },
+          request: { method, path: path2, origin },
           error: error2
         } = evt;
         debuglog(
           "request to %s %s/%s errored - %s",
           method,
           origin,
-          path,
+          path2,
           error2.message
         );
       });
@@ -1607,9 +1607,9 @@ var require_diagnostics = __commonJS({
         });
         diagnosticsChannel.channel("undici:client:sendHeaders").subscribe((evt) => {
           const {
-            request: { method, path, origin }
+            request: { method, path: path2, origin }
           } = evt;
-          debuglog("sending request to %s %s/%s", method, origin, path);
+          debuglog("sending request to %s %s/%s", method, origin, path2);
         });
       }
       diagnosticsChannel.channel("undici:websocket:open").subscribe((evt) => {
@@ -1672,7 +1672,7 @@ var require_request = __commonJS({
     var kHandler = /* @__PURE__ */ Symbol("handler");
     var Request = class {
       constructor(origin, {
-        path,
+        path: path2,
         method,
         body,
         headers,
@@ -1687,11 +1687,11 @@ var require_request = __commonJS({
         expectContinue,
         servername
       }, handler2) {
-        if (typeof path !== "string") {
+        if (typeof path2 !== "string") {
           throw new InvalidArgumentError("path must be a string");
-        } else if (path[0] !== "/" && !(path.startsWith("http://") || path.startsWith("https://")) && method !== "CONNECT") {
+        } else if (path2[0] !== "/" && !(path2.startsWith("http://") || path2.startsWith("https://")) && method !== "CONNECT") {
           throw new InvalidArgumentError("path must be an absolute URL or start with a slash");
-        } else if (invalidPathRegex.test(path)) {
+        } else if (invalidPathRegex.test(path2)) {
           throw new InvalidArgumentError("invalid request path");
         }
         if (typeof method !== "string") {
@@ -1757,7 +1757,7 @@ var require_request = __commonJS({
         this.completed = false;
         this.aborted = false;
         this.upgrade = upgrade || null;
-        this.path = query ? buildURL(path, query) : path;
+        this.path = query ? buildURL(path2, query) : path2;
         this.origin = origin;
         this.idempotent = idempotent == null ? method === "HEAD" || method === "GET" : idempotent;
         this.blocking = blocking == null ? false : blocking;
@@ -4007,7 +4007,7 @@ var require_util2 = __commonJS({
   "node_modules/undici/lib/web/fetch/util.js"(exports2, module2) {
     "use strict";
     var { Transform } = require("node:stream");
-    var zlib = require("node:zlib");
+    var zlib2 = require("node:zlib");
     var { redirectStatusSet, referrerPolicySet: referrerPolicyTokens, badPortsSet } = require_constants3();
     var { getGlobalOrigin } = require_global();
     var { collectASequenceOfCodePoints, collectAnHTTPQuotedString, removeChars, parseMIMEType } = require_data_url();
@@ -4707,7 +4707,7 @@ var require_util2 = __commonJS({
             callback();
             return;
           }
-          this._inflateStream = (chunk[0] & 15) === 8 ? zlib.createInflate(this.#zlibOptions) : zlib.createInflateRaw(this.#zlibOptions);
+          this._inflateStream = (chunk[0] & 15) === 8 ? zlib2.createInflate(this.#zlibOptions) : zlib2.createInflateRaw(this.#zlibOptions);
           this._inflateStream.on("data", this.push.bind(this));
           this._inflateStream.on("end", () => this.push(null));
           this._inflateStream.on("error", (err) => this.destroy(err));
@@ -6387,7 +6387,7 @@ var require_client_h1 = __commonJS({
       return method !== "GET" && method !== "HEAD" && method !== "OPTIONS" && method !== "TRACE" && method !== "CONNECT";
     }
     function writeH1(client, request2) {
-      const { method, path, host, upgrade, blocking, reset } = request2;
+      const { method, path: path2, host, upgrade, blocking, reset } = request2;
       let { body, headers, contentLength } = request2;
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH" || method === "QUERY" || method === "PROPFIND" || method === "PROPPATCH";
       if (util.isFormDataLike(body)) {
@@ -6462,7 +6462,7 @@ var require_client_h1 = __commonJS({
       if (blocking) {
         socket[kBlocking] = true;
       }
-      let header = `${method} ${path} HTTP/1.1\r
+      let header = `${method} ${path2} HTTP/1.1\r
 `;
       if (typeof host === "string") {
         header += `host: ${host}\r
@@ -6988,7 +6988,7 @@ var require_client_h2 = __commonJS({
     }
     function writeH2(client, request2) {
       const session = client[kHTTP2Session];
-      const { method, path, host, upgrade, expectContinue, signal, headers: reqHeaders } = request2;
+      const { method, path: path2, host, upgrade, expectContinue, signal, headers: reqHeaders } = request2;
       let { body } = request2;
       if (upgrade) {
         util.errorRequest(client, request2, new Error("Upgrade not supported for H2"));
@@ -7055,7 +7055,7 @@ var require_client_h2 = __commonJS({
         });
         return true;
       }
-      headers[HTTP2_HEADER_PATH] = path;
+      headers[HTTP2_HEADER_PATH] = path2;
       headers[HTTP2_HEADER_SCHEME] = "https";
       const expectsPayload = method === "PUT" || method === "POST" || method === "PATCH";
       if (body && typeof body.read === "function") {
@@ -7408,9 +7408,9 @@ var require_redirect_handler = __commonJS({
           return this.handler.onHeaders(statusCode, headers, resume, statusText);
         }
         const { origin, pathname, search } = util.parseURL(new URL(this.location, this.opts.origin && new URL(this.opts.path, this.opts.origin)));
-        const path = search ? `${pathname}${search}` : pathname;
+        const path2 = search ? `${pathname}${search}` : pathname;
         this.opts.headers = cleanRequestHeaders(this.opts.headers, statusCode === 303, this.opts.origin !== origin);
-        this.opts.path = path;
+        this.opts.path = path2;
         this.opts.origin = origin;
         this.opts.maxRedirections = 0;
         this.opts.query = null;
@@ -8645,10 +8645,10 @@ var require_proxy_agent = __commonJS({
         };
         const {
           origin,
-          path = "/",
+          path: path2 = "/",
           headers = {}
         } = opts;
-        opts.path = origin + path;
+        opts.path = origin + path2;
         if (!("host" in headers) && !("Host" in headers)) {
           const { host } = new URL2(origin);
           headers.host = host;
@@ -10597,20 +10597,20 @@ var require_mock_utils = __commonJS({
       }
       return true;
     }
-    function safeUrl(path) {
-      if (typeof path !== "string") {
-        return path;
+    function safeUrl(path2) {
+      if (typeof path2 !== "string") {
+        return path2;
       }
-      const pathSegments = path.split("?");
+      const pathSegments = path2.split("?");
       if (pathSegments.length !== 2) {
-        return path;
+        return path2;
       }
       const qp = new URLSearchParams(pathSegments.pop());
       qp.sort();
       return [...pathSegments, qp.toString()].join("?");
     }
-    function matchKey(mockDispatch2, { path, method, body, headers }) {
-      const pathMatch = matchValue(mockDispatch2.path, path);
+    function matchKey(mockDispatch2, { path: path2, method, body, headers }) {
+      const pathMatch = matchValue(mockDispatch2.path, path2);
       const methodMatch = matchValue(mockDispatch2.method, method);
       const bodyMatch = typeof mockDispatch2.body !== "undefined" ? matchValue(mockDispatch2.body, body) : true;
       const headersMatch = matchHeaders(mockDispatch2, headers);
@@ -10632,7 +10632,7 @@ var require_mock_utils = __commonJS({
     function getMockDispatch(mockDispatches, key) {
       const basePath = key.query ? buildURL(key.path, key.query) : key.path;
       const resolvedPath = typeof basePath === "string" ? safeUrl(basePath) : basePath;
-      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path }) => matchValue(safeUrl(path), resolvedPath));
+      let matchedMockDispatches = mockDispatches.filter(({ consumed }) => !consumed).filter(({ path: path2 }) => matchValue(safeUrl(path2), resolvedPath));
       if (matchedMockDispatches.length === 0) {
         throw new MockNotMatchedError(`Mock dispatch not matched for path '${resolvedPath}'`);
       }
@@ -10670,9 +10670,9 @@ var require_mock_utils = __commonJS({
       }
     }
     function buildKey(opts) {
-      const { path, method, body, headers, query } = opts;
+      const { path: path2, method, body, headers, query } = opts;
       return {
-        path,
+        path: path2,
         method,
         body,
         headers,
@@ -11135,10 +11135,10 @@ var require_pending_interceptors_formatter = __commonJS({
       }
       format(pendingInterceptors) {
         const withPrettyHeaders = pendingInterceptors.map(
-          ({ method, path, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
+          ({ method, path: path2, data: { statusCode }, persist, times, timesInvoked, origin }) => ({
             Method: method,
             Origin: origin,
-            Path: path,
+            Path: path2,
             "Status code": statusCode,
             Persistent: persist ? PERSISTENT : NOT_PERSISTENT,
             Invocations: timesInvoked,
@@ -13383,7 +13383,7 @@ var require_fetch = __commonJS({
     } = require_response();
     var { HeadersList } = require_headers();
     var { Request, cloneRequest } = require_request2();
-    var zlib = require("node:zlib");
+    var zlib2 = require("node:zlib");
     var {
       bytesMatch,
       makePolicyContainer,
@@ -14345,23 +14345,23 @@ var require_fetch = __commonJS({
                 for (let i = codings.length - 1; i >= 0; --i) {
                   const coding = codings[i].trim();
                   if (coding === "x-gzip" || coding === "gzip") {
-                    decoders.push(zlib.createGunzip({
+                    decoders.push(zlib2.createGunzip({
                       // Be less strict when decoding compressed responses, since sometimes
                       // servers send slightly invalid responses that are still accepted
                       // by common browsers.
                       // Always using Z_SYNC_FLUSH is what cURL does.
-                      flush: zlib.constants.Z_SYNC_FLUSH,
-                      finishFlush: zlib.constants.Z_SYNC_FLUSH
+                      flush: zlib2.constants.Z_SYNC_FLUSH,
+                      finishFlush: zlib2.constants.Z_SYNC_FLUSH
                     }));
                   } else if (coding === "deflate") {
                     decoders.push(createInflate({
-                      flush: zlib.constants.Z_SYNC_FLUSH,
-                      finishFlush: zlib.constants.Z_SYNC_FLUSH
+                      flush: zlib2.constants.Z_SYNC_FLUSH,
+                      finishFlush: zlib2.constants.Z_SYNC_FLUSH
                     }));
                   } else if (coding === "br") {
-                    decoders.push(zlib.createBrotliDecompress({
-                      flush: zlib.constants.BROTLI_OPERATION_FLUSH,
-                      finishFlush: zlib.constants.BROTLI_OPERATION_FLUSH
+                    decoders.push(zlib2.createBrotliDecompress({
+                      flush: zlib2.constants.BROTLI_OPERATION_FLUSH,
+                      finishFlush: zlib2.constants.BROTLI_OPERATION_FLUSH
                     }));
                   } else {
                     decoders.length = 0;
@@ -16019,9 +16019,9 @@ var require_util6 = __commonJS({
         }
       }
     }
-    function validateCookiePath(path) {
-      for (let i = 0; i < path.length; ++i) {
-        const code = path.charCodeAt(i);
+    function validateCookiePath(path2) {
+      for (let i = 0; i < path2.length; ++i) {
+        const code = path2.charCodeAt(i);
         if (code < 32 || // exclude CTLs (0-31)
         code > 126 || // exclude DEL and non-ascii
         code === 59) {
@@ -18752,11 +18752,11 @@ var require_undici = __commonJS({
           if (typeof opts.path !== "string") {
             throw new InvalidArgumentError("invalid opts.path");
           }
-          let path = opts.path;
+          let path2 = opts.path;
           if (!opts.path.startsWith("/")) {
-            path = `/${path}`;
+            path2 = `/${path2}`;
           }
-          url = new URL(util.parseOrigin(url).origin + path);
+          url = new URL(util.parseOrigin(url).origin + path2);
         } else {
           if (!opts) {
             opts = typeof url === "object" ? url : {};
@@ -20200,8 +20200,8 @@ var Context = class {
       if ((0, import_fs2.existsSync)(process.env.GITHUB_EVENT_PATH)) {
         this.payload = JSON.parse((0, import_fs2.readFileSync)(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
       } else {
-        const path = process.env.GITHUB_EVENT_PATH;
-        process.stdout.write(`GITHUB_EVENT_PATH ${path} does not exist${import_os3.EOL}`);
+        const path2 = process.env.GITHUB_EVENT_PATH;
+        process.stdout.write(`GITHUB_EVENT_PATH ${path2} does not exist${import_os3.EOL}`);
       }
     }
     this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -24164,27 +24164,152 @@ function getOctokit(token, options, ...additionalPlugins) {
   return new GitHubWithPlugins(getOctokitOptions(token, options));
 }
 
+// src/scanner.ts
+var import_fs3 = __toESM(require("fs"));
+var import_path = __toESM(require("path"));
+var import_zlib = __toESM(require("zlib"));
+function scanDirectory(dirPath) {
+  if (!import_fs3.default.existsSync(dirPath)) {
+    return [];
+  }
+  const results = [];
+  function walk(currentPath) {
+    const entries = import_fs3.default.readdirSync(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = import_path.default.join(currentPath, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.isFile()) {
+        const content = import_fs3.default.readFileSync(fullPath);
+        const relativeFileName = import_path.default.relative(dirPath, fullPath).replace(/\\/g, "/");
+        const warnings = [];
+        if (relativeFileName.endsWith(".js") || relativeFileName.endsWith(".ts")) {
+          const textContent = content.toString("utf-8");
+          if (textContent.includes("require('moment')") || textContent.includes('from "moment"') || textContent.includes("from 'moment'")) {
+            warnings.push('\u26A0\uFE0F Heavy Dependency: "moment" detected. Consider using "date-fns" or "dayjs".');
+          }
+          if (textContent.includes("require('lodash')") || textContent.includes('from "lodash"') || textContent.includes("from 'lodash'")) {
+            warnings.push('\u26A0\uFE0F Heavy Dependency: "lodash" detected. Consider importing specific subpaths or native methods.');
+          }
+        }
+        const gzipped = import_zlib.default.gzipSync(content);
+        results.push({
+          path: fullPath,
+          fileName: relativeFileName,
+          size: content.length,
+          gzipSize: gzipped.length,
+          warnings
+        });
+      }
+    }
+  }
+  walk(dirPath);
+  return results;
+}
+
+// src/comparator.ts
+function compareBundles(baseFiles, prFiles) {
+  const baseMap = /* @__PURE__ */ new Map();
+  baseFiles.forEach((file) => baseMap.set(file.fileName, file));
+  const prMap = /* @__PURE__ */ new Map();
+  prFiles.forEach((file) => prMap.set(file.fileName, file));
+  const allFileNames = Array.from(
+    /* @__PURE__ */ new Set([...baseMap.keys(), ...prMap.keys()])
+  );
+  let totalBaseSize = 0;
+  let totalPrSize = 0;
+  const fileComparisons = allFileNames.map((fileName) => {
+    const baseFile = baseMap.get(fileName);
+    const prFile = prMap.get(fileName);
+    const baseGzipSize = baseFile ? baseFile.gzipSize : 0;
+    const prGzipSize = prFile ? prFile.gzipSize : 0;
+    totalBaseSize += baseGzipSize;
+    totalPrSize += prGzipSize;
+    const diffBytes = prGzipSize - baseGzipSize;
+    const percentageChange = baseGzipSize === 0 ? prGzipSize > 0 ? 100 : 0 : Number((diffBytes / baseGzipSize * 100).toFixed(1));
+    const warnings = prFile ? prFile.warnings : [];
+    return {
+      fileName,
+      baseGzipSize,
+      prGzipSize,
+      diffBytes,
+      percentageChange,
+      warnings
+    };
+  });
+  const totalDiffBytes = totalPrSize - totalBaseSize;
+  const totalPercentageChange = totalBaseSize === 0 ? totalPrSize > 0 ? 100 : 0 : Number((totalDiffBytes / totalBaseSize * 100).toFixed(1));
+  return {
+    totalBaseSize,
+    totalPrSize,
+    totalDiffBytes,
+    totalPercentageChange,
+    files: fileComparisons
+  };
+}
+
+// src/formatter.ts
+function formatMarkdownReport(summary2) {
+  const sign = summary2.totalDiffBytes >= 0 ? "+" : "";
+  const totalChangeFormatted = `${sign}${summary2.totalDiffBytes} bytes (${sign}${summary2.totalPercentageChange}%)`;
+  let markdown = `## \u{1F4E6} BundleDiff Summary
+
+`;
+  markdown += `* **Total Base Size:** \`${summary2.totalBaseSize} bytes\`
+`;
+  markdown += `* **Total PR Size:** \`${summary2.totalPrSize} bytes\`
+`;
+  markdown += `* **Total Change:** \`${totalChangeFormatted}\`
+
+`;
+  markdown += `### \u{1F50D} File Breakdown
+
+`;
+  markdown += `| File Name | Base Gzip | PR Gzip | Delta | Change | Warnings |
+`;
+  markdown += `| :--- | :--- | :--- | :--- | :--- | :--- |
+`;
+  for (const file of summary2.files) {
+    const fileSign = file.diffBytes >= 0 ? "+" : "";
+    const fileDelta = `${fileSign}${file.diffBytes} B`;
+    const filePct = `${fileSign}${file.percentageChange}%`;
+    const warningsText = file.warnings.length > 0 ? file.warnings.join("<br/>") : "\u2705 None";
+    markdown += `| \`${file.fileName}\` | ${file.baseGzipSize} B | ${file.prGzipSize} B | ${fileDelta} | ${filePct} | ${warningsText} |
+`;
+  }
+  markdown += `
+---
+*Report generated automatically by **BundleDiff**.*`;
+  return markdown;
+}
+
 // src/index.ts
 async function run() {
   try {
+    const baseDir = getInput("base-dir");
+    const prDir = getInput("pr-dir");
     const token = getInput("github-token");
     const octokit = getOctokit(token);
     const context3 = context2;
-    info("BundleDiff Action booted up!");
+    info("BundleDiff: Scanning build directories...");
+    const baseFiles = scanDirectory(baseDir);
+    const prFiles = scanDirectory(prDir);
+    const summary2 = compareBundles(baseFiles, prFiles);
+    const markdownReport = formatMarkdownReport(summary2);
     if (context3.payload.pull_request) {
       await octokit.rest.issues.createComment({
         owner: context3.repo.owner,
         repo: context3.repo.repo,
         issue_number: context3.payload.pull_request.number,
-        body: "\u{1F680} **BundleDiff** is active! (The byte comparison data will go here soon)."
+        body: markdownReport
       });
-      info("Comment successfully posted to the PR!");
+      info("BundleDiff: Report posted successfully to PR!");
     } else {
       info("Not a Pull Request event, skipping comment.");
     }
   } catch (error2) {
     if (error2 instanceof Error) {
-      setFailed(`Action failed with error: ${error2.message}`);
+      setFailed(`BundleDiff Action failed: ${error2.message}`);
     }
   }
 }

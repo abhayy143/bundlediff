@@ -1,67 +1,82 @@
-import { FileStats } from './scanner';
+import { ScannedFile } from './scanner';
 
-export interface FileDiff {
+export interface FileComparison {
   fileName: string;
   baseGzipSize: number;
   prGzipSize: number;
   diffBytes: number;
   percentageChange: number;
-  warnings: string[]; 
+  warnings: string[];
 }
 
-export interface BundleSummary {
-  files: FileDiff[];
+export interface BundleDiffSummary {
   totalBaseSize: number;
   totalPrSize: number;
   totalDiffBytes: number;
   totalPercentageChange: number;
+  files: FileComparison[];
 }
 
-export function compareBuilds(baseFiles: FileStats[], prFiles: FileStats[]): BundleSummary {
-  const diffs: FileDiff[] = [];
+export function compareBundles(
+  baseFiles: ScannedFile[],
+  prFiles: ScannedFile[]
+): BundleDiffSummary {
+  const baseMap = new Map<string, ScannedFile>();
+  baseFiles.forEach((file) => baseMap.set(file.fileName, file));
+
+  const prMap = new Map<string, ScannedFile>();
+  prFiles.forEach((file) => prMap.set(file.fileName, file));
+
+  const allFileNames = Array.from(
+    new Set([...baseMap.keys(), ...prMap.keys()])
+  );
+
   let totalBaseSize = 0;
   let totalPrSize = 0;
 
-  for (const prFile of prFiles) {
-    const baseFile = baseFiles.find(file => file.relativePath === prFile.relativePath);
+  const fileComparisons: FileComparison[] = allFileNames.map((fileName) => {
+    const baseFile = baseMap.get(fileName);
+    const prFile = prMap.get(fileName);
 
-    const baseSize = baseFile ? baseFile.gzipSize : 0;
-    const prSize = prFile.gzipSize;
-    const diffBytes = prSize - baseSize;
+    const baseGzipSize = baseFile ? baseFile.gzipSize : 0;
+    const prGzipSize = prFile ? prFile.gzipSize : 0;
 
-    let percentageChange = 0;
-    if (baseSize === 0) {
-      percentageChange = 100;
-    } else {
-      percentageChange = (diffBytes / baseSize) * 100;
-    }
+    totalBaseSize += baseGzipSize;
+    totalPrSize += prGzipSize;
 
-    totalBaseSize += baseSize;
-    totalPrSize += prSize;
+    const diffBytes = prGzipSize - baseGzipSize;
+    const percentageChange =
+      baseGzipSize === 0
+        ? prGzipSize > 0
+          ? 100
+          : 0
+        : Number(((diffBytes / baseGzipSize) * 100).toFixed(1));
 
-    diffs.push({
-      fileName: prFile.relativePath,
-      baseGzipSize: baseSize,
-      prGzipSize: prSize,
-      diffBytes: diffBytes,
-      percentageChange: Number(percentageChange.toFixed(2)),
-      warnings: prFile.warnings 
-    });
-  }
+    const warnings = prFile ? prFile.warnings : [];
+
+    return {
+      fileName,
+      baseGzipSize,
+      prGzipSize,
+      diffBytes,
+      percentageChange,
+      warnings,
+    };
+  });
 
   const totalDiffBytes = totalPrSize - totalBaseSize;
-  let totalPercentageChange = 0;
-  if (totalBaseSize === 0 && totalPrSize > 0) {
-      totalPercentageChange = 100;
-  } else if (totalBaseSize > 0) {
-      totalPercentageChange = (totalDiffBytes / totalBaseSize) * 100;
-  }
+  const totalPercentageChange =
+    totalBaseSize === 0
+      ? totalPrSize > 0
+        ? 100
+        : 0
+      : Number(((totalDiffBytes / totalBaseSize) * 100).toFixed(1));
 
   return {
-    files: diffs,
     totalBaseSize,
     totalPrSize,
     totalDiffBytes,
-    totalPercentageChange: Number(totalPercentageChange.toFixed(2))
+    totalPercentageChange,
+    files: fileComparisons,
   };
 }
