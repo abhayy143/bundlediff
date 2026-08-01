@@ -1,6 +1,5 @@
 name: Test BundleDiff Action
 
-
 on:
   pull_request:
     branches:
@@ -10,15 +9,16 @@ jobs:
   test-our-action:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write 
+      pull-requests: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         
       - name: Run BundleDiff
-       
         uses: ./ 
         with:
           base-dir: './'
           pr-dir: './'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          supabase-url: ${{ secrets.SUPABASE_URL }}
+          supabase-key: ${{ secrets.SUPABASE_KEY }}
