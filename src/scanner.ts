@@ -1,54 +1,63 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import zlib from 'node:zlib';
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
 
-export interface FileStats {
+export interface ScannedFile {
   path: string;
-  relativePath: string;
-  size: number; 
+  fileName: string;
+  size: number;
   gzipSize: number;
-  warnings: string[]; // <-- NEW: Array to hold any warnings we find
+  warnings: string[];
 }
 
-export function scanDirectory(directoryPath: string): FileStats[] {
-  const results: FileStats[] = [];
-  const files = fs.readdirSync(directoryPath, { recursive: true });
+const IGNORED_FOLDERS = new Set(['.git', '.github', 'node_modules']);
 
-  for (const file of files) {
-    const relativePath = file.toString();
-    const fullPath = path.join(directoryPath, relativePath);
-    const stat = fs.statSync(fullPath);
+export function scanDirectory(dirPath: string): ScannedFile[] {
+  if (!fs.existsSync(dirPath)) {
+    return [];
+  }
 
-    if (stat.isFile()) {
-      const fileBuffer = fs.readFileSync(fullPath);
-      const gzippedBuffer = zlib.gzipSync(fileBuffer);
-      
-      // Dependency Inspector Logic
-      const warnings: string[] = [];
-      
-     
-      if (relativePath.endsWith('.js')) {
-     
-        const codeText = fileBuffer.toString('utf-8');
-        
-        
-        if (codeText.includes('moment')) {
-            warnings.push('⚠️ Heavy Dependency: "moment" detected. Consider using "date-fns" or "dayjs" instead.');
+  const results: ScannedFile[] = [];
+
+  function walk(currentPath: string) {
+    const entries = fs.readdirSync(currentPath, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = path.join(currentPath, entry.name);
+
+      if (entry.isDirectory()) {
+        if (IGNORED_FOLDERS.has(entry.name)) {
+          continue;
         }
-        if (codeText.includes('lodash') && !codeText.includes('lodash-es')) {
-            warnings.push('⚠️ Heavy Dependency: "lodash" detected. Ensure you are tree-shaking or use "lodash-es".');
+        walk(fullPath);
+      } else if (entry.isFile()) {
+        const content = fs.readFileSync(fullPath);
+        const relativeFileName = path.relative(dirPath, fullPath).replace(/\\/g, '/');
+
+        const warnings: string[] = [];
+        if (relativeFileName.endsWith('.js') || relativeFileName.endsWith('.ts')) {
+          const textContent = content.toString('utf-8');
+          if (textContent.includes("require('moment')") || textContent.includes('from "moment"') || textContent.includes("from 'moment'")) {
+            warnings.push('⚠️ Heavy Dependency: "moment" detected. Consider using "date-fns" or "dayjs".');
+          }
+          if (textContent.includes("require('lodash')") || textContent.includes('from "lodash"') || textContent.includes("from 'lodash'")) {
+            warnings.push('⚠️ Heavy Dependency: "lodash" detected. Consider importing specific subpaths or native methods.');
+          }
         }
+
+        const gzipped = zlib.gzipSync(content);
+
+        results.push({
+          path: fullPath,
+          fileName: relativeFileName,
+          size: content.length,
+          gzipSize: gzipped.length,
+          warnings
+        });
       }
-
-      results.push({
-        path: fullPath,
-        relativePath: relativePath,
-        size: stat.size,
-        gzipSize: gzippedBuffer.length,
-        warnings: warnings 
-      });
     }
   }
 
+  walk(dirPath);
   return results;
 }
