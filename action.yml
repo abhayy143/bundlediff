@@ -1,0 +1,21 @@
+name: 'BundleDiff'
+description: 'Measures gzipped build sizes, calculates PR differences, and detects heavy dependencies.'
+author: 'BundleDiff'
+
+inputs:
+  base-dir:
+    description: 'The directory of the base (main branch) build'
+    required: true
+    default: './build-base'
+  pr-dir:
+    description: 'The directory of the PR build'
+    required: true
+    default: './build-pr'
+  github-token:
+    description: 'GitHub token for posting comments'
+    required: true
+
+
+runs:
+  using: 'node24'
+  main: 'dist/index.js' 
