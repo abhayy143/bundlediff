@@ -10,6 +10,8 @@ export interface ScannedFile {
   warnings: string[];
 }
 
+const IGNORED_FOLDERS = new Set(['.git', '.github', 'node_modules']);
+
 export function scanDirectory(dirPath: string): ScannedFile[] {
   if (!fs.existsSync(dirPath)) {
     return [];
@@ -24,6 +26,9 @@ export function scanDirectory(dirPath: string): ScannedFile[] {
       const fullPath = path.join(currentPath, entry.name);
 
       if (entry.isDirectory()) {
+        if (IGNORED_FOLDERS.has(entry.name)) {
+          continue;
+        }
         walk(fullPath);
       } else if (entry.isFile()) {
         const content = fs.readFileSync(fullPath);

@@ -24168,6 +24168,7 @@ function getOctokit(token, options, ...additionalPlugins) {
 var import_fs3 = __toESM(require("fs"));
 var import_path = __toESM(require("path"));
 var import_zlib = __toESM(require("zlib"));
+var IGNORED_FOLDERS = /* @__PURE__ */ new Set([".git", ".github", "node_modules"]);
 function scanDirectory(dirPath) {
   if (!import_fs3.default.existsSync(dirPath)) {
     return [];
@@ -24178,6 +24179,9 @@ function scanDirectory(dirPath) {
     for (const entry of entries) {
       const fullPath = import_path.default.join(currentPath, entry.name);
       if (entry.isDirectory()) {
+        if (IGNORED_FOLDERS.has(entry.name)) {
+          continue;
+        }
         walk(fullPath);
       } else if (entry.isFile()) {
         const content = import_fs3.default.readFileSync(fullPath);
